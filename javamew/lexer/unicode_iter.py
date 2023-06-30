@@ -33,17 +33,22 @@ def hex_to_int(c: cython.Py_UCS4) -> cython.int:
         raise ValueError("Invalid hexadecimal character: {}".format(chr(c_int)))
 
 @cython.cclass
-class CharIterator:
+class UnicodeIterator:
     def __init__(self, source: str, index: cython.int) -> None:
         self._source: str = source
         self._len: cython.int = len(source)
         self._index: cython.int = index
+        self._is_escaped: cython.bint = False
+        self._contiguous_backslashes: cython.int = 0
     
-    def clone(self) -> "CharIterator":
-        return CharIterator(
+    def clone(self) -> "UnicodeIterator":
+        it = UnicodeIterator(
             self._source,
-            self._index
+            self._index,
         )
+        it._is_escaped = self._is_escaped
+        it._contiguous_backslashes = self._contiguous_backslashes
+        return it
 
     @cython.boundscheck(False)
     def next(self) -> cython.Py_UCS4:
@@ -55,24 +60,41 @@ class CharIterator:
         else:
             return '\0'
     
+    def _is_eligible(self) -> cython.bint:
+        if self._is_escaped:
+            return True
+        elif self._contiguous_backslashes % 2 == 1:
+            return True
+        return False
+    
     def bump(self) -> cython.Py_UCS4:
         c: cython.Py_UCS4 = self.next()
         if c == '\\':
-            # escape unicode chars
-            if self.first() == "u":
-                self.next()
-                while self.first() == "u":
+            self._contiguous_backslashes += 1
+            # if backslash eligible
+            if self._is_eligible():
+                # escape unicode chars
+                if self.first() == "u":
                     self.next()
-            else:
-                return c
+                    while self.first() == "u":
+                        self.next()
 
-            
-            value = 0
-            for i in range(4):
-                c = self.next()
-                if is_hex(c):
-                    value += 16**(3-i) * hex_to_int(c)
-            return chr(value)
+                    value = 0
+                    hex_char = []
+                    i: cython.int = 0
+                    while i < 4:
+                        c = self.next()
+                        hex_char.append(c)
+                        if is_hex(c):
+                            value += 16**(3-i) * hex_to_int(c)
+                        else:
+                            raise ValueError(f"Illegal escape character {''.join(hex_char)}.")
+                        i += 1
+                    self._is_escaped = True
+                    return chr(value)
+        else:
+            self._contiguous_backslashes = 0
+        self._is_escaped = False
         return c
                 
     def advance_by(self, n: cython.int) -> cython.int:

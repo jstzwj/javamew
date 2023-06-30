@@ -3,7 +3,7 @@ from typing import Optional
 import cython
 from javamew.diagnostics.engine import Diagnostic
 
-from ..basic.char_iter import CharIterator
+from .unicode_iter import UnicodeIterator
 from .token import JavaToken, TokenKind
 
 def is_whitespace(c: cython.Py_UCS4) -> cython.bint:
@@ -41,16 +41,16 @@ def is_lineterminator(c: cython.Py_UCS4) -> cython.bint:
 @cython.cclass
 class JavaTokenizer:
     def __init__(self, source: str, diagnostic: Optional[Diagnostic] = None) -> None:
-        self.char_iter = CharIterator(source, 0)
+        self.unicode_iter = UnicodeIterator(source, 0)
         if diagnostic is None:
             diagnostic = Diagnostic()
         self.diagnostic = diagnostic
 
     def advance_token(self) -> JavaToken:
-        it = self.char_iter.clone()
+        it = self.unicode_iter.clone()
 
-        start_pos = self.char_iter._index
-        c = self.char_iter.first()
+        start_pos = self.unicode_iter._index
+        c = self.unicode_iter.first()
         token_kind: cython.int = TokenKind.EOF
         if is_whitespace(c):
             token_kind = self.whitespace()
@@ -61,10 +61,10 @@ class JavaTokenizer:
         else:
             pass
         
-        end_pos = self.char_iter._index
+        end_pos = self.unicode_iter._index
         token_len = end_pos - start_pos
         token_text = ""
-        while it._index < self.char_iter._index:
+        while it._index < self.unicode_iter._index:
             token_text += it.bump()
         return JavaToken(token_kind, token_text, token_len)
     

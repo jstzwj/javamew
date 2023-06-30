@@ -10,8 +10,8 @@ from javamew.lexer.token import TokenKind
 with open("tests/source/helloworld.java", "r", encoding="utf-8") as f:
     code = f.read()
 
-from javamew.basic.char_iter import CharIterator
-it = CharIterator(code, 0)
+from javamew.lexer.unicode_iter import UnicodeIterator
+it = UnicodeIterator(code, 0)
 while not it.is_eof():
     print(it.bump())
 
