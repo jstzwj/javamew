@@ -1,11 +1,14 @@
 
 from typing import Optional
 import cython
+from javamew.basic.character import is_java_identifier_part, is_java_identifier_start
 from javamew.diagnostics.engine import Diagnostic
+from javamew.lexer.char_utils import is_digit, is_octal, is_zero_to_three
 
 from .unicode_iter import UnicodeIterator
 from .line_iter import LineIterator
-from .token import JavaToken, TokenKind
+from .token import BOOLEAN_FALSE_LITERAL, BOOLEAN_LITERALS, BOOLEAN_TRUE_LITERAL, CONTEXTUAL_KEYWORDS, ESCAPE_CHARS, NULL_LITERAL, RESERVED_KEYWORDS, JavaToken, TokenKind
+
 
 def is_line_terminator(c: cython.Py_UCS4) -> cython.bint:
     if c == 0x000A or c == 0x000D:
@@ -72,10 +75,8 @@ class JavaTokenizer:
         elif is_comment_start(first_char, second_char):
             # comment
             token_kind = self.comment()
-        elif first_char == "\\":
-            pass
         else:
-            pass
+            token_kind = self.token()
         
         end_pos = self._iter.index()
         token_len = end_pos - start_pos
@@ -115,3 +116,77 @@ class JavaTokenizer:
                 return TokenKind.EndOfLineComment
 
         return TokenKind.EndOfLineComment
+    
+    def token(self) -> cython.int:
+        c = self._iter.first()
+        if is_java_identifier_start(c):
+            token_text = self._get_identifier_chars()
+            # Boolean Literals
+            if token_text == BOOLEAN_TRUE_LITERAL or token_text == BOOLEAN_FALSE_LITERAL:
+                return TokenKind.BooleanLiteral
+            # Null Literals
+            if token_text == NULL_LITERAL:
+                return TokenKind.NullLiteral
+            # Keywords and identifiers
+            return self._keywords(token_text)
+        elif c == "\"":
+            # StringLiteral
+            # TextBlock
+            pass
+        elif c == "\'":
+            # CharacterLiteral
+            return self._character_literal()
+        elif is_digit(c) or c == ".":
+            # IntegerLiteral
+            # FloatingPointLiteral
+            pass
+        else:
+            pass
+    
+    def _get_identifier_chars(self) -> str:
+        token_text = ""
+        token_text += self._iter.bump()
+        while is_java_identifier_part(self._iter.first()):
+            token_text += self._iter.bump()
+        return token_text
+    
+    def _identifiers(self, token_text: str) -> cython.int:
+        if token_text not in RESERVED_KEYWORDS and \
+            token_text not in BOOLEAN_LITERALS and \
+            token_text != NULL_LITERAL:
+            return TokenKind.Identifier
+
+    def _keywords(self, token_text: str) -> cython.int:
+        if token_text in RESERVED_KEYWORDS:
+            return TokenKind.ReservedKeyword
+        elif token_text in CONTEXTUAL_KEYWORDS:
+            return TokenKind.ContextualKeyword
+        else:
+            return TokenKind.Identifier
+    
+    def _escape_sequences(self) -> cython.int:
+        c = self._iter.first()
+        if c in ESCAPE_CHARS:
+            self._iter.bump()
+        elif is_zero_to_three(c):
+            self._iter.bump()
+            if is_octal(c): self._iter.bump()
+            if is_octal(c): self._iter.bump()
+        elif is_octal(c):
+            self._iter.bump()
+            if is_octal(c): self._iter.bump()
+
+    def _character_literal(self) -> cython.int:
+        open_c = self._iter.bump()
+        c = self._iter.bump()
+        if c == "'":
+            raise ValueError("Empty character literal")
+        elif c == "\n":
+            raise ValueError("Unclosed character literal")
+        elif c == "\\":
+            self._escape_sequences()
+        close_c = self._iter.bump()
+        if close_c != "'":
+            raise ValueError("Too many characters in character literal")
+        return TokenKind.CharacterLiteral
+

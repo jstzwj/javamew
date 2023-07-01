@@ -3,8 +3,61 @@ import cython
 
 from enum import IntEnum
 
+
+RESERVED_KEYWORDS = set(['abstract', 'assert', 'boolean', 'break', 'byte', 'case',
+                  'catch', 'char', 'class', 'const', 'continue', 'default',
+                  'do', 'double', 'else', 'enum', 'extends', 'final',
+                  'finally', 'float', 'for', 'goto', 'if', 'implements',
+                  'import', 'instanceof', 'int', 'interface', 'long', 'native',
+                  'new', 'package', 'private', 'protected', 'public', 'return',
+                  'short', 'static', 'strictfp', 'super', 'switch',
+                  'synchronized', 'this', 'throw', 'throws', 'transient', 'try',
+                  'void', 'volatile', 'while'])
+
+CONTEXTUAL_KEYWORDS = set(['exports', 'module', 'non-sealed', 'open',
+                  'opens', 'permits', 'provides', 'record',
+                  'requires', 'sealed', 'to', 'transitive',
+                  'uses', 'var', 'with', 'yield'])
+
+
+MODIFIERS = set(['abstract', 'default', 'final', 'native', 'private',
+                  'protected', 'public', 'static', 'strictfp', 'synchronized',
+                  'transient', 'volatile'])
+
+BASIC_TYPES = set(['boolean', 'byte', 'char', 'double',
+                  'float', 'int', 'long', 'short'])
+
+BOOLEAN_TRUE_LITERAL = "true"
+BOOLEAN_FALSE_LITERAL = "false"
+BOOLEAN_LITERALS = set(['true', 'false'])
+NULL_LITERAL = 'null'
+
+SEPARATORS = set(['(', ')', '{', '}', '[', ']', ';', ',', '.'])
+
+OPERATORS = set(['>>>=', '>>=', '<<=',  '%=', '^=', '|=', '&=', '/=',
+                '*=', '-=', '+=', '<<', '--', '++', '||', '&&', '!=',
+                '>=', '<=', '==', '%', '^', '|', '&', '/', '*', '-',
+                '+', ':', '?', '~', '!', '<', '>', '=', '...', '->', '::'])
+
+INFIX_OPERATORS = set(['||', '&&', '|', '^', '&', '==', '!=', '<', '>', '<=', '>=',
+                '<<', '>>', '>>>', '+', '-', '*', '/', '%'])
+
+PREFIX_OPERATORS = set(['++', '--', '!', '~', '+', '-'])
+
+POSTFIX_OPERATORS = set(['++', '--'])
+
+ASSIGNMENT_OPERATORS = set(['=', '+=', '-=', '*=', '/=', '&=', '|=', '^=', '%=',
+                    '<<=', '>>=', '>>>='])
+
+LAMBDA_OPERATORS = set(['->'])
+
+METHOD_REFERENCE_OPERATORS = set(['::',])
+
+ESCAPE_CHARS = set(['b', 's', 't', 'n', 'f', 'r', '\n', '"', '\'', '\\'])
+
 @cython.cclass
 class TokenKind:
+    UNKNOWN = 0 # Used to traceback
     EOF = 1
     # WhiteSpace
     WhiteSpace = 2
@@ -13,8 +66,18 @@ class TokenKind:
     EndOfLineComment = 4
     # Token = 5, 6, 7, 8
     Identifier = 5
-    Keyword = 6
-    Literal = 7
+    # Keyword
+    ReservedKeyword = 6
+    ContextualKeyword = 7
+    # Literal
+    IntegerLiteral = 8
+    FloatingPointLiteral = 9
+    BooleanLiteral = 10
+    CharacterLiteral = 11
+    StringLiteral = 12
+    TextBlock = 13
+    NullLiteral = 14
+
     Separator = 8
     Operator = 9
 

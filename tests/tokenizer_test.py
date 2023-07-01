@@ -43,5 +43,49 @@ class TestUnicodeIter(unittest.TestCase):
             tokenizer = JavaTokenizer(" /*abc**")
             tokens = self._get_tokens(tokenizer)
     
+    def test_identifiers(self):
+        tokenizer = JavaTokenizer("MAX_VALUE")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.Identifier, "MAX_VALUE", 9),
+        ])
+        
+        tokenizer = JavaTokenizer("αρετη αρετ")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.Identifier, "αρετη", 5),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.Identifier, "αρετ", 4),
+        ])
+    
+    def test_keywords(self):
+        tokenizer = JavaTokenizer("public static class Big_ma// Nice!")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.ReservedKeyword, "public", 6),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.ReservedKeyword, "static", 6),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.ReservedKeyword, "class", 5),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.Identifier, "Big_ma", 6),
+            JavaToken(TokenKind.EndOfLineComment, "// Nice!", 8),
+        ])
+    
+    def test_characters(self):
+        tokenizer = JavaTokenizer("'a''b'")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.CharacterLiteral, "'a'", 3),
+            JavaToken(TokenKind.CharacterLiteral, "'b'", 3),
+        ])
+        tokenizer = JavaTokenizer("'\\023' 'b'")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.CharacterLiteral, "'\\023'", 6),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.CharacterLiteral, "'b'", 3),
+        ])
+    
 if __name__ == "__main__":
     unittest.main()
