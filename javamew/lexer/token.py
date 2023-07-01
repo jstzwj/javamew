@@ -6,8 +6,17 @@ from enum import IntEnum
 @cython.cclass
 class TokenKind:
     EOF = 1
+    # WhiteSpace
     WhiteSpace = 2
-    Comment = 3
+    # Comment = 3, 4
+    TraditionalComment = 3
+    EndOfLineComment = 4
+    # Token = 5, 6, 7, 8
+    Identifier = 5
+    Keyword = 6
+    Literal = 7
+    Separator = 8
+    Operator = 9
 
 @cython.cclass
 class JavaToken:
@@ -16,9 +25,26 @@ class JavaToken:
         self._value: str = value
         self._len: cython.int = len
     
+    def __str__(self) -> str:
+        return f"<{self._kind}, {self._value}>"
+    
+    def __repr__(self) -> str:
+        return f"<{self._kind}, \"{self._value}\">"
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, JavaToken):
+            return False
+        return self._kind == other.kind and \
+            self._value == other.value and \
+            self._len == other.len
+
     @property
-    def kind(self) -> int:
+    def kind(self) -> cython.int:
         return self._kind
+    
+    @property
+    def value(self) -> str:
+        return self._value
 
     @property
     def len(self) -> int:

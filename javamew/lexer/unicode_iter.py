@@ -117,9 +117,12 @@ class UnicodeIterator:
     def look_nth(self, n: cython.int) -> cython.Py_UCS4:
         it = self.clone()
         c: cython.Py_UCS4 = "\0"
-        while not it.is_eof() and n >= 0:
+        while n >= 0:
+            if it.is_eof():
+                return "\0"
             c = it.bump()
             n -= 1
+
         return c
 
     def first(self) -> cython.Py_UCS4:
@@ -128,7 +131,7 @@ class UnicodeIterator:
     def second(self) -> cython.Py_UCS4:
         return self.look_nth(1)
     
-    def eat_while(self, predicate: Callable[[cython.Py_UCS4], bool]):
+    def eat_while(self, predicate: Callable[[cython.Py_UCS4], bool]) -> None:
         while predicate(self.first()) and not self.is_eof():
             self.bump()
 

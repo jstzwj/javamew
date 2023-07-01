@@ -45,6 +45,14 @@ class TestUnicodeIter(unittest.TestCase):
         it = UnicodeIterator("\\u00pC", 0)
         with self.assertRaises(ValueError):
             tokens = self._get_token_list(it)
+    
+    def test_eof(self):
+        it = UnicodeIterator("abc", 0)
+        self.assertEqual(it.first(), "a")
+        self.assertEqual(it.second(), "b")
+        self.assertEqual(it.look_nth(2), "c")
+        self.assertEqual(it.look_nth(3), "\0")
+        self.assertEqual(it.look_nth(4), "\0")
 
 if __name__ == "__main__":
     unittest.main()
