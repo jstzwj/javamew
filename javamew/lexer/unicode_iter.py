@@ -34,6 +34,9 @@ def hex_to_int(c: cython.Py_UCS4) -> cython.int:
 
 @cython.cclass
 class UnicodeIterator:
+    """
+    REF: https://docs.oracle.com/javase/specs/jls/se20/html/jls-3.html#jls-3.3
+    """
     def __init__(self, source: str, index: cython.int) -> None:
         self._source: str = source
         self._len: cython.int = len(source)

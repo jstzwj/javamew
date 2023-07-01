@@ -10,6 +10,8 @@ cdef class UnicodeIterator:
 
     cpdef UnicodeIterator clone(self)
     cdef Py_UCS4 next(self)
+
+    cpdef bint is_eof(self)
     cdef bint _is_eligible(self)
     cdef int advance_by(self, int n)
     cdef Py_UCS4 nth(self, int n)
