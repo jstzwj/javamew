@@ -89,10 +89,12 @@ class JavaToken:
         self._len: cython.int = len
     
     def __str__(self) -> str:
-        return f"<{self._kind}, {self._value}>"
+        value_str = self._value.replace('\n', '\\n')
+        return f"<{self._kind}, {value_str}>"
     
     def __repr__(self) -> str:
-        return f"<{self._kind}, \"{self._value}\">"
+        value_str = self._value.replace('\n', '\\n')
+        return f"<{self._kind}, \"{value_str}\">"
     
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, JavaToken):

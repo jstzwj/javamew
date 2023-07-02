@@ -10,5 +10,5 @@ def _get_tokens(it):
     return ret
 
 
-tokenizer = JavaTokenizer("public static class Big_ma// Nice!")
+tokenizer = JavaTokenizer("\"abcd\" ")
 tokens = _get_tokens(tokenizer)

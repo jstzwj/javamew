@@ -32,9 +32,6 @@ def is_whitespace(c: cython.Py_UCS4) -> cython.bint:
         and vertical tab 0x000b
         '''
         return True
-    elif is_line_terminator(c):
-        # The character is a whitespace character newline
-        return True
     elif c >= 0x2000 and c <= 0x200a:
         # The character is a whitespace character in the Unicode category "Space Separator"
         return True
@@ -69,7 +66,7 @@ class JavaTokenizer:
         second_char = self._iter.second()
         token_kind: cython.int = TokenKind.EOF
 
-        if is_whitespace(first_char):
+        if is_whitespace(first_char) or is_line_terminator(first_char):
             # whitespace
             token_kind = self.whitespace()
         elif is_comment_start(first_char, second_char):
@@ -130,13 +127,18 @@ class JavaTokenizer:
             # Keywords and identifiers
             return self._keywords(token_text)
         elif c == "\"":
-            # StringLiteral
-            # TextBlock
-            pass
+            second_char = self._iter.look_nth(1)
+            third_char = self._iter.look_nth(2)
+            if second_char == "\"" and third_char == "\"":
+                # TextBlock
+                return self._text_block()
+            else:
+                # StringLiteral
+                return self._string_literal()
         elif c == "\'":
             # CharacterLiteral
             return self._character_literal()
-        elif is_digit(c) or c == ".":
+        elif is_digit(c) or c == "." or c == "-":
             # IntegerLiteral
             # FloatingPointLiteral
             pass
@@ -190,3 +192,55 @@ class JavaTokenizer:
             raise ValueError("Too many characters in character literal")
         return TokenKind.CharacterLiteral
 
+    def _text_block(self) -> cython.int:
+        self._iter.bump() # bump quote
+        self._iter.bump() # bump quote
+        self._iter.bump() # bump quote
+
+        self._iter.eat_while(is_whitespace)
+
+        newline = self._iter.bump()
+        if not is_line_terminator(newline):
+            raise ValueError("Illegal text block start: missing new line after opening quotes")
+        
+        while not self._iter.is_eof():
+            current_char = self._iter.first()
+            if current_char == "\\":
+                self._escape_sequences()
+            elif current_char == "\"":
+                second_char = self._iter.look_nth(1)
+                third_char = self._iter.look_nth(2)
+                if second_char == "\"" and third_char == "\"":
+                    break
+                self._iter.bump()
+            else:
+                self._iter.bump()
+        
+        c = self._iter.bump() # bump quote
+        if c != "\"":
+            raise ValueError("Unclosed text block")
+        c = self._iter.bump() # bump quote
+        if c != "\"":
+            raise ValueError("Unclosed text block")
+        c = self._iter.bump() # bump quote
+        if c != "\"":
+            raise ValueError("Unclosed text block")
+        return TokenKind.TextBlock
+
+    def _string_literal(self) -> cython.int:
+        self._iter.bump() # bump quote
+
+        while not self._iter.is_eof():
+            current_char = self._iter.first()
+            if current_char == "\\":
+                self._escape_sequences()
+            elif current_char == "\"":
+                break
+            elif is_line_terminator(current_char):
+                raise ValueError("Illegal line end in string literal")
+            else:
+                self._iter.bump()
+        c = self._iter.bump() # bump quote
+        if c != "\"":
+            raise ValueError("Unclosed string literal")
+        return TokenKind.StringLiteral

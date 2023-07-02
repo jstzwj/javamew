@@ -87,5 +87,23 @@ class TestUnicodeIter(unittest.TestCase):
             JavaToken(TokenKind.CharacterLiteral, "'b'", 3),
         ])
     
+    def test_strings(self):
+        tokenizer = JavaTokenizer("\"abcd\" ")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.StringLiteral, "\"abcd\"", 6),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+        ])
+        tokenizer = JavaTokenizer("\"abcd\"\n")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.StringLiteral, "\"abcd\"", 6),
+            JavaToken(TokenKind.WhiteSpace, "\n", 1),
+        ])
+
+        with self.assertRaises(ValueError):
+            tokenizer = JavaTokenizer("\"abcd\r\n\"\n")
+            tokens = self._get_tokens(tokenizer)
+    
 if __name__ == "__main__":
     unittest.main()
