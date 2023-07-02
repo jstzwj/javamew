@@ -3,7 +3,7 @@ from typing import Optional
 import cython
 from javamew.basic.character import is_java_identifier_part, is_java_identifier_start
 from javamew.diagnostics.engine import Diagnostic
-from javamew.lexer.char_utils import is_digit, is_octal, is_zero_to_three
+from javamew.lexer.char_utils import is_digit, is_hex, is_octal, is_zero_to_three
 
 from .unicode_iter import UnicodeIterator
 from .line_iter import LineIterator
@@ -139,9 +139,8 @@ class JavaTokenizer:
             # CharacterLiteral
             return self._character_literal()
         elif is_digit(c) or c == "." or c == "-":
-            # IntegerLiteral
-            # FloatingPointLiteral
-            pass
+            # IntegerLiteral and FloatingPointLiteral
+            token_kind = self._integer_and_floating_point_literal()
         else:
             pass
     
@@ -244,3 +243,75 @@ class JavaTokenizer:
         if c != "\"":
             raise ValueError("Unclosed string literal")
         return TokenKind.StringLiteral
+    
+    def _integer_and_floating_point_literal(self) -> cython.int:
+        c = self._iter.first()
+        c_next = self._iter.second()
+        if c == '0' and c_next in 'xX':
+            token_kind = self._hex_integer_literal()
+            if token_kind == TokenKind.UNKNOWN:
+                token_kind = self._hex_floating_point_literal()
+            return token_kind
+        elif c == '0' and c_next in 'bB':
+            return self._binary_integer_literal()
+        elif c == '0' and c_next in '01234567':
+            self._octal_integer_literal()
+        else:
+            return self._decimal_literal()
+
+    def _decimal_literal(self) -> cython.int:
+        it = self._iter.clone()
+        c = it.first()
+        if c == "0":
+            it.bump()
+        elif is_digit(c):
+            it.bump()
+        else:
+            return TokenKind.UNKNOWN
+
+    def _hex_integer_literal(self) -> cython.int:
+        it = self._iter.clone()
+        it.bump() # bump zero
+        it.bump() # bump x
+
+        c = it.bump()
+        if not is_hex(c):
+            raise ValueError("Hexadecimal numbers must contain at least one hexadecimal digit")
+        
+        while not it.is_eof():
+            current_char = it.first()
+            if is_hex(current_char):
+                it.bump()
+            elif current_char == "_":
+                next_char = it.second()
+                if is_hex(next_char) or next_char == "_":
+                    it.bump()
+                else:
+                    raise ValueError("Illegal underscore")
+            elif current_char == "." or current_char in "pP":
+                return TokenKind.UNKNOWN
+            else:
+                break
+        self._iter = it
+        return TokenKind.HexIntegerLiteral
+
+    def _hex_floating_point_literal(self) -> cython.int:
+        it = self._iter.clone()
+        it.bump() # bump zero
+        it.bump() # bump x
+
+    def _octal_integer_literal(self) -> cython.int:
+        self._iter.bump() # bump zero
+        self._iter.bump() # bump 0-7
+        
+
+    def _binary_integer_literal(self) -> cython.int:
+        self._iter.bump() # bump zero
+        self._iter.bump() # bump b
+        
+    def _integer_type_suffix(self, it) -> None:
+        c = it.first()
+        if c == "l" or c == "L":
+            it.bump()
+        return
+

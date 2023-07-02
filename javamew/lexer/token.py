@@ -70,16 +70,24 @@ class TokenKind:
     ReservedKeyword = 6
     ContextualKeyword = 7
     # Literal
-    IntegerLiteral = 8
-    FloatingPointLiteral = 9
-    BooleanLiteral = 10
-    CharacterLiteral = 11
-    StringLiteral = 12
-    TextBlock = 13
-    NullLiteral = 14
+    # IntegerLiteral = 8
+    DecimalIntegerLiteral = 8
+    HexIntegerLiteral = 9
+    OctalIntegerLiteral = 10
+    BinaryIntegerLiteral = 11
 
-    Separator = 8
-    Operator = 9
+    # FloatingPointLiteral = 14
+    DecimalFloatingPointLiteral = 12
+    HexadecimalFloatingPointLiteral = 13
+    
+    BooleanLiteral = 15
+    CharacterLiteral = 16
+    StringLiteral = 17
+    TextBlock = 18
+    NullLiteral = 19
+
+    Separator = 20
+    Operator = 21
 
 @cython.cclass
 class JavaToken:
