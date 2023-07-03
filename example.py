@@ -1,14 +1,12 @@
 
 
 from javamew.lexer.tokenizer import JavaTokenizer
+from javamew.parser.ast import Node
+from javamew.parser.tree import CompilationUnit
 
 
-def _get_tokens(it):
-    ret = []
-    while not it.is_eof():
-        ret.append(it.advance_token())
-    return ret
+node = Node()
+print(node.attrs)
 
-
-tokenizer = JavaTokenizer("\"abcd\" ")
-tokens = _get_tokens(tokenizer)
+unit = CompilationUnit()
+print(unit)

@@ -3,36 +3,13 @@
 import pickle
 
 import six
+from pydantic import BaseModel
 
+class Node(BaseModel):
 
-class MetaNode(type):
-    def __new__(mcs, name: str, bases, dict):
-        attrs = list(dict['attrs'])
-        dict['attrs'] = list()
-
-        for base in bases:
-            if hasattr(base, 'attrs'):
-                dict['attrs'].extend(base.attrs)
-
-        dict['attrs'].extend(attrs)
-
-        return type.__new__(mcs, name, bases, dict)
-
-
-@six.add_metaclass(MetaNode)
-class Node(object):
-    attrs = ()
-
-    def __init__(self, **kwargs):
-        values = kwargs.copy()
-
-        for attr_name in self.attrs:
-            value = values.pop(attr_name, None)
-            setattr(self, attr_name, value)
-
-        if values:
-            raise ValueError('Extraneous arguments')
-
+    def __init__(self):
+        self.attrs = [x for x in dir(self) if not x.startswith('__')]
+    
     def __equals__(self, other):
         if type(other) is not type(self):
             return False
@@ -61,13 +38,9 @@ class Node(object):
     @property
     def children(self):
         return [getattr(self, attr_name) for attr_name in self.attrs]
-    
-    @property
-    def position(self):
-        if hasattr(self, "_position"):
-            return self._position
 
-def walk_tree(root):
+
+def walk_tree(root: Node):
     children = None
 
     if isinstance(root, Node):

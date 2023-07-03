@@ -21,7 +21,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
-    "six", "Cython"
+    "six", "Cython", "pydantic"
 ]
 
 [project.optional-dependencies]

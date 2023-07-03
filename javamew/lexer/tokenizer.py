@@ -7,7 +7,7 @@ from javamew.lexer.char_utils import is_digit, is_hex, is_octal, is_zero_to_thre
 
 from .unicode_iter import UnicodeIterator
 from .line_iter import LineIterator
-from .token import BOOLEAN_FALSE_LITERAL, BOOLEAN_LITERALS, BOOLEAN_TRUE_LITERAL, CONTEXTUAL_KEYWORDS, ESCAPE_CHARS, NULL_LITERAL, RESERVED_KEYWORDS, JavaToken, TokenKind
+from .token import BOOLEAN_FALSE_LITERAL, BOOLEAN_LITERALS, BOOLEAN_TRUE_LITERAL, CONTEXTUAL_KEYWORDS, ESCAPE_CHARS, NULL_LITERAL, OPERATOR_CHARS, OPERATORS, RESERVED_KEYWORDS, SEPARATORS, JavaToken, TokenKind
 
 
 def is_line_terminator(c: cython.Py_UCS4) -> cython.bint:
@@ -141,8 +141,14 @@ class JavaTokenizer:
         elif is_digit(c) or c == "." or c == "-":
             # IntegerLiteral and FloatingPointLiteral
             token_kind = self._integer_and_floating_point_literal()
+        elif c in SEPARATORS:
+            return self._separator()
         else:
-            pass
+            token_kind = self._operator()
+            if token_kind != TokenKind.UNKNOWN:
+                return token_kind
+            else:
+                raise ValueError("Could not process token")
     
     def _get_identifier_chars(self) -> str:
         token_text = ""
@@ -314,4 +320,26 @@ class JavaTokenizer:
         if c == "l" or c == "L":
             it.bump()
         return
+    
+    def _separator(self) -> cython.int:
+        c = self._iter.first()
+        if c in SEPARATORS:
+            self._iter.bump()
+            return TokenKind.Separator
+        else:
+            return TokenKind.UNKNOWN
+    
+    def _operator(self) -> cython.int:
+        it = self._iter.clone()
+        operator_str = ""
+        for l in range(4):
+            c = it.bump()
+            operator_str += c
+            if c not in OPERATOR_CHARS:
+                break
+            if operator_str in OPERATORS:
+                self._iter = it
+                return TokenKind.Operator
+        return TokenKind.UNKNOWN
+
 

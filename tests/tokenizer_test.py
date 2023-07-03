@@ -105,5 +105,16 @@ class TestUnicodeIter(unittest.TestCase):
             tokenizer = JavaTokenizer("\"abcd\r\n\"\n")
             tokens = self._get_tokens(tokenizer)
     
+    def test_operators(self):
+        tokenizer = JavaTokenizer("\"a\" + \"a\"")
+        tokens = self._get_tokens(tokenizer)
+        self.assertEqual(tokens, [
+            JavaToken(TokenKind.StringLiteral, "\"a\"", 3),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.Operator, "+", 1),
+            JavaToken(TokenKind.WhiteSpace, " ", 1),
+            JavaToken(TokenKind.StringLiteral, "\"a\"", 3),
+        ])
+    
 if __name__ == "__main__":
     unittest.main()
