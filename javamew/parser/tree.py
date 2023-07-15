@@ -1,10 +1,17 @@
 
-from typing import List, TypeAlias, Union
+from typing import List, Literal, TypeAlias, Union
 from .ast import Node
 
 # ------------------------------------------------------------------------------
 
 TypeName = TypeAlias[str]
+PackageName = TypeAlias[str]
+ModuleName = TypeAlias[str]
+PackageOrTypeName = TypeAlias[str]
+
+AmbiguousName = TypeAlias[str]
+
+RequiresModifier = Literal["transitive", "static"]
 
 class CompilationUnit(Node):
     pass
@@ -22,7 +29,35 @@ class ModularCompilationUnit(CompilationUnit):
     module_declaration: "ModuleDeclaration"
 
 class ModuleDeclaration(Node):
+    annotations: List["Annotation"]
+    name: str
+    module_directives: List["ModuleDirective"]
+
+# ------------------------------------------------------------------------------
+
+class ModuleDirective(Node):
     pass
+
+class RequiresModuleDirective(ModuleDirective):
+    modifier = RequiresModifier
+    module_name = ModuleName
+
+class ExportsModuleDirective(ModuleDirective):
+    package_name: PackageName
+    to_modules: List[ModuleName]
+
+
+class OpensModuleDirective(ModuleDirective):
+    package_name: PackageName
+    to_modules: List[ModuleName]
+
+
+class UsesModuleDirective(ModuleDirective):
+    type_name: TypeName
+
+class ProvidesModuleDirective(ModuleDirective):
+    type_name: TypeName
+    with_types: List[TypeName]
 
 # ------------------------------------------------------------------------------
 
@@ -67,8 +102,17 @@ class PackageDeclaration(Node):
 class ClassDeclaration(Node):
     pass
 
+ClassModifier = TypeAlias[Literal["public", "protected", "private", "abstract", "static", "final", "sealed", "non-sealed", "strictfp"]]
+
 class NormalClassDeclaration(ClassDeclaration):
-    pass
+    annotations: List[Annotation]
+    modifiers: List[ClassModifier]
+    name: str
+    generic_parameters: List["TypeParameter"]
+    extends: "ClassType"
+    interfaces: List["InterfaceType"]
+    permits: List[TypeName]
+    body: List["ClassBodyDeclaration"]
 
 class EnumDeclaration(ClassDeclaration):
     pass
